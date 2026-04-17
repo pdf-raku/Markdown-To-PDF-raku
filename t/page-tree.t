@@ -17,7 +17,9 @@ paragraphs.
 TEXT
 
 my Text::Markdown::Document:D $document .= new($text);
-my $doc-ast = Markdown::To::PDF::TagsTree.render:  $document;
+my Markdown::To::PDF::TagsTree $reader .= new;
+my $doc-ast = $reader.render: $document;
+my %role-map := $reader.role-map;
 
 is-deeply $doc-ast, 'Document' =>
                                [
@@ -28,14 +30,9 @@ is-deeply $doc-ast, 'Document' =>
                                    :P["It has two paragraphs."],
                                ];
 
-my %role-map = (
-    :HR => :Artifact[ :Placement<Block> ],
-);
-
 lives-ok {
     my PDF::Tags::Render $renderer .= new: :%role-map;
     my PDF::API6:D $pdf = $renderer.render: $doc-ast;
-    mkdir "tmp";
     $pdf.save-as: "tmp/page-tree.pdf";
 }
 

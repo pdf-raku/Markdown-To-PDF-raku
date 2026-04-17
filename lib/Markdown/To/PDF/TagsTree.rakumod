@@ -6,8 +6,7 @@ has Pair:D @!tags;
 has Str:D $.lang = 'en';
 has $!level = 1;
 has Bool $!inlining = False;
-has Bool $.verbose;
-has %.replace;
+has %.role-map;
 has Bool $.indent;
 has @!item-nums;
 
@@ -37,6 +36,7 @@ multi method read(Text::Markdown::Heading $md) {
 }
 
 multi method read(Text::Markdown::Rule $md) {
+    %!role-map<HR> //= :Artifact[ :Placement<Block> ];
     self!tag: 'HR';
 }
 
