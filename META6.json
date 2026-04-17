@@ -1,0 +1,28 @@
+{
+  "author": "David Warring",
+  "build-depends": [
+  ],
+  "depends": [
+    "PDF::Tags::Renderer",
+    "IETF::RFC_Grammar::URI",
+    "File::Temp",
+    "URI"
+  ],
+  "description": "Markdown to PDF converter",
+  "license": "Artistic-2.0",
+    "name": "Markdown::To::PDF",
+  "provides": {
+    "Markdown::To::PDF": "lib/Markdown/To/PDF.rakumod",
+    "Markdown::To::PDF::TagsTree": "lib/Markdown/To/PDF/TagsTree.rakumod"
+  },
+  "resources": [
+  ],
+  "source-url": "git://github.com/pdf-raku/Markdown-To-PDF-raku.git",
+  "tags": [
+    "pdf",
+    "pod"
+  ],
+  "test-depends": [
+  ],
+  "version": "0.0.1"
+}
