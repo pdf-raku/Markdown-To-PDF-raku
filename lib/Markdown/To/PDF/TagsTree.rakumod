@@ -20,31 +20,55 @@ multi method render(::?CLASS:U: |c) {
 
 method !block(Str:D $tag, $md, |c) {
     self!tag: $tag, |c, {
-        $.read($_) for $md.items;
+        $.render($_) for $md.items;
     }
 }
 
 multi method render(::?CLASS:D: Text::Markdown::Document $md) {
-    self!block: Document, Lang => $!lang, $md;
+    if @!tags {
+        self.render($_) for $md.items;
+    }
+    else {
+        self!block: Document, Lang => $!lang, $md;
+    }
 }
 
-multi method read(Text::Markdown::Heading $md) {
+multi method render(Text::Markdown::Heading $md) {
     my UInt:D $level = $md.level.&min(6).&max(1);
     self!tag: 'H' ~ $level, {
         self!add-content: $md.text;
     }
 }
 
-multi method read(Text::Markdown::Rule $md) {
+multi method render(Text::Markdown::Rule $md) {
     %!role-map<HR> //= :Artifact[ :Placement<Block> ];
     self!tag: 'HR';
 }
 
-multi method read(Text::Markdown::Paragraph $md) {
+multi method render(Text::Markdown::Paragraph $md) {
     self!block: Paragraph, $md;
 }
 
-multi method read(Str:D $text) {
+multi method render(Text::Markdown::Blockquote $md) {
+    self!block: BlockQuote, $md;
+}
+
+multi method render(Text::Markdown::CodeBlock $md) {
+    self!tag: CODE, {
+        self.render: $md.text
+    }
+}
+multi method render(Text::Markdown::List $md) {
+    self!tag: LIST, {
+        for $md.items -> $item {
+            self!tag: ListItem, {
+                self.render: $item
+            }
+        }
+    }
+}
+
+multi method render(Str:D $text) {
         $!inlining = True;
         self!add-content: $text;
 }

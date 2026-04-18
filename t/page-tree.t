@@ -21,22 +21,63 @@ my Markdown::To::PDF::TagsTree $reader .= new;
 my $doc-ast = $reader.render: $document;
 my %role-map := $reader.role-map;
 
-is-deeply $doc-ast, 'Document' =>
-                               [
-                                   :Lang<en>,
-                                   :H2["Markdown Test"],
-                                   :P["This is a simple markdown document."],
-                                   :HR[],
-                                   :P["It has two paragraphs."],
-                               ];
+is-deeply %role-map, %( HR => :Artifact[ :Placement<Block> ] );
 
+is-deeply $doc-ast, 'Document' => [
+       :Lang<en>,
+       :H2["Markdown Test"],
+       :P["This is a simple markdown document."],
+       :HR[],
+       :P["It has two paragraphs."],
+   ];
+
+my PDF::Tags::Render $renderer .= new: :%role-map;
 lives-ok {
-    my PDF::Tags::Render $renderer .= new: :%role-map;
-    my PDF::API6:D $pdf = $renderer.render: $doc-ast;
-    $pdf.save-as: "tmp/page-tree.pdf";
+    $renderer.render: $doc-ast;
 }
 
-pass;
+## next text with lists
 
+$reader .= new;
+$document .= new: q:to/TEXT/;
+ -  List One
+ -  List Two
+
+> blockquote
+> fun
+
+    code
+    block
+
+ -  Block List One
+
+ -  Block List Two
+
+ 1. ol One
+ 2. ol Two
+
+* Other List One
+* Other List Two
+
+TEXT
+
+$doc-ast = $reader.render: $document;
+ is-deeply $doc-ast , 'Document' => [
+        :Lang("en"),
+        :L[:LI[:P["List One"]],
+            :LI[:P["List Two"]]],
+        :BlockQuote[:P["blockquote fun"]],
+        :Code["code\nblock"],
+        :L[:LI[:P["Block List One"]],
+            :LI[:P["Block List Two"]]],
+        :L[:LI[:P["ol One"]],
+            :LI[:L[:LI[:P["ol Two"]]]]],
+        :L[:LI[:P["Other List One"]],
+            :LI[:P["Other List Two"]]],
+ ];
+
+$renderer.render: $doc-ast;
+
+$renderer.pdf.save-as: "tmp/page-tree.pdf";
 done-testing;
 

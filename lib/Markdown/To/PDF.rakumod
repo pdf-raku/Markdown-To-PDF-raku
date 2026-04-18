@@ -20,7 +20,7 @@ sub read-batch($renderer, Text::Markdown::Document $md, PDF::Content::PageTree:D
 
 # synchronous Markdown processing
 sub read($renderer, Text::Markdown::Document $md, |c) {
-    my %batch = $renderer.&read-batch($md, $renderer.pdf.Pages, $renderer.root.fragment);
+    my %batch = $renderer.&read-batch($md, $renderer.pdf.Pages, $renderer.root);
     $renderer.merge-batch: %batch;
 }
 
