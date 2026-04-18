@@ -9,6 +9,7 @@ has Bool $!inlining = False;
 has %.role-map;
 has Bool $.indent;
 has @!item-nums;
+has Text::Markdown::Document $!document;
 
 enum Tags ( :Artifact<Artifact>, :BlockQuote<BlockQuote>, :Caption<Caption>, :CODE<Code>, :Division<Div>, :Document<Document>, :Header<H>, :Label<Lbl>, :LIST<L>, :ListBody<LBody>, :ListItem<LI>, :FootNote<FENote>, :Reference<Reference>, :Paragraph<P>, :Quote<Quote>, :Span<Span>, :Section<Sect>, :Table<Table>, :TableBody<TBody>, :TableHead<THead>, :TableHeader<TH>, :TableData<TD>, :TableRow<TR>, :Link<Link>, :Emphasis<Em>, :Strong<Strong>, :Title<Title> );
 
@@ -29,6 +30,7 @@ multi method render(::?CLASS:D: Text::Markdown::Document $md) {
         self.render($_) for $md.items;
     }
     else {
+        temp $!document = $md;
         self!block: Document, Lang => $!lang, $md;
     }
 }
@@ -53,11 +55,24 @@ multi method render(Text::Markdown::Blockquote $md) {
     self!block: BlockQuote, $md;
 }
 
-multi method render(Text::Markdown::CodeBlock $md) {
+multi method render(Text::Markdown::Code $md) {
     self!tag: CODE, {
         self.render: $md.text
     }
 }
+
+multi method render(Text::Markdown::CodeBlock $md) {
+     self!tag: Paragraph, {
+         my %atts;
+         if $md.lang -> $lang {
+             %atts<role> = $lang.lc;
+         }
+         self!tag: CODE, |%atts, {
+             self.render: $md.text
+         }
+    }
+}
+
 multi method render(Text::Markdown::List $md) {
     self!tag: LIST, {
         for $md.items -> $item {
@@ -65,6 +80,46 @@ multi method render(Text::Markdown::List $md) {
                 self.render: $item
             }
         }
+    }
+}
+
+multi method render(Text::Markdown::Emphasis $md) {
+    self!tag: Emphasis, {
+        self.render: $md.text;
+    }
+}
+
+multi method render(Text::Markdown::Link $md) {
+    my %atts;
+    if $md.url -> $url {
+        %atts<href> = $url
+    }
+    elsif $md.ref -> $ref {
+        # todo proper internal links
+        %atts<href> = '#' ~ $ref
+            if $!document.references{$ref};
+    }
+    self!tag: Link, |%atts, {
+        self.render: $md.text
+    }
+}
+
+multi method render(Text::Markdown::Image $md) {
+    # todo inline images
+    my %atts;
+    if $md.url -> $url {
+        %atts<href> = $url
+    }
+    elsif $md.ref -> $ref {
+        # todo proper internal links
+        %atts<href> = '#' ~ $ref
+            if $!document.references{$ref};
+    }
+    if $md.text -> $alt {
+        %atts<Alt> = $alt;
+    }
+    self!tag: Link, |%atts, {
+        self.render: $md.text
     }
 }
 

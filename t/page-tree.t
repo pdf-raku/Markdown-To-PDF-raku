@@ -62,12 +62,12 @@ $document .= new: q:to/TEXT/;
 TEXT
 
 $doc-ast = $reader.render: $document;
- is-deeply $doc-ast , 'Document' => [
+is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
         :L[:LI[:P["List One"]],
             :LI[:P["List Two"]]],
         :BlockQuote[:P["blockquote fun"]],
-        :Code["code\nblock"],
+        :P[:Code["code\nblock"]],
         :L[:LI[:P["Block List One"]],
             :LI[:P["Block List Two"]]],
         :L[:LI[:P["ol One"]],
@@ -75,9 +75,46 @@ $doc-ast = $reader.render: $document;
         :L[:LI[:P["Other List One"]],
             :LI[:P["Other List Two"]]],
  ];
-
 $renderer.render: $doc-ast;
 
+$document .= new: q:to/TEXT/;
+```
+# unknown
+code
+```
+
+```raku
+# raku code
+```
+
+TEXT
+
+$doc-ast = $reader.render: $document;
+is-deeply $doc-ast , 'Document' => [
+        :Lang("en"),
+        :P[:Code["# unknown\ncode"]],
+        :P[:Code[:role("raku"), "# raku code"]]
+];
+$renderer.render: $doc-ast;
+                                                   
+$document .= new:  q:to/TEXT/;
+This is a *paragraph* with **many** `different` ``inline` elements``.
+[Links](http://google.com), for [example][], as well as ![Images](/bad/path.jpg)
+(including ![Reference][] style) <http://google.com>
+
+[example]: http://example.com
+[Reference]: /another/bad/image.jpg
+TEXT
+
+$doc-ast = $reader.render: $document;
+$renderer.render: $doc-ast;
+
+is-deeply $doc-ast , 'Document' => [
+        :Lang("en"),
+        :P["This is a ", :Em["paragraph"], " with ", :Em["many"], " ", :Code["different"], " ", :Code["inline` elements"], ". ", :Link[:href("http://google.com"), "Links"], ", for ", :Link[:href("#example"), "example"], ", as well as ", :Link[:Alt("Images"), :href("/bad/path.jpg"), "Images"], " (including ", :Link[:Alt("Reference"), :href("#Reference"), "Reference"], " style) ", :Link[:href("http://google.com"), "http://google.com"]],
+];
+
 $renderer.pdf.save-as: "tmp/page-tree.pdf";
+
 done-testing;
 
