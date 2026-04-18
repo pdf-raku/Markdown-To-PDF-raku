@@ -11,7 +11,7 @@ has Bool $.indent;
 has @!item-nums;
 has Text::Markdown::Document $!document;
 
-enum Tags ( :Artifact<Artifact>, :BlockQuote<BlockQuote>, :Caption<Caption>, :CODE<Code>, :Division<Div>, :Document<Document>, :Header<H>, :Label<Lbl>, :LIST<L>, :ListBody<LBody>, :ListItem<LI>, :FootNote<FENote>, :Reference<Reference>, :Paragraph<P>, :Quote<Quote>, :Span<Span>, :Section<Sect>, :Table<Table>, :TableBody<TBody>, :TableHead<THead>, :TableHeader<TH>, :TableData<TD>, :TableRow<TR>, :Link<Link>, :Emphasis<Em>, :Strong<Strong>, :Title<Title> );
+enum Tags ( :ArtifTagact<Artifact>, :BlockQuote<BlockQuote>, :Caption<Caption>, :CODE<Code>, :Division<Div>, :Document<Document>, :Header<H>, :Label<Lbl>, :LIST<L>, :ListBody<LBody>, :ListItem<LI>, :FootNote<FENote>, :Reference<Reference>, :Paragraph<P>, :Quote<Quote>, :Span<Span>, :Section<Sect>, :Table<Table>, :TableBody<TBody>, :TableHead<THead>, :TableHeader<TH>, :TableData<TD>, :TableRow<TR>, :Link<Link>, :Emphasis<Em>, :Strong<Strong>, :Title<Title>, :Figure<Figure> );
 
 proto method render($, *% --> Pair) {*}
 
@@ -84,7 +84,8 @@ multi method render(Text::Markdown::List $md) {
 }
 
 multi method render(Text::Markdown::Emphasis $md) {
-    self!tag: Emphasis, {
+    my $tag = $md.level <= 1 ?? Emphasis !! Strong;
+    self!tag: $tag, {
         self.render: $md.text;
     }
 }
@@ -118,7 +119,7 @@ multi method render(Text::Markdown::Image $md) {
     if $md.text -> $alt {
         %atts<Alt> = $alt;
     }
-    self!tag: Link, |%atts, {
+    self!tag: Figure, |%atts, {
         self.render: $md.text
     }
 }

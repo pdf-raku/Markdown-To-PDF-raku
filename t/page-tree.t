@@ -111,7 +111,7 @@ $renderer.render: $doc-ast;
 
 is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
-        :P["This is a ", :Em["paragraph"], " with ", :Em["many"], " ", :Code["different"], " ", :Code["inline` elements"], ". ", :Link[:href("http://google.com"), "Links"], ", for ", :Link[:href("#example"), "example"], ", as well as ", :Link[:Alt("Images"), :href("/bad/path.jpg"), "Images"], " (including ", :Link[:Alt("Reference"), :href("#Reference"), "Reference"], " style) ", :Link[:href("http://google.com"), "http://google.com"]],
+        :P["This is a ", :Em["paragraph"], " with ", :Strong["many"], " ", :Code["different"], " ", :Code["inline` elements"], ". ", :Link[:href("http://google.com"), "Links"], ", for ", :Link[:href("#example"), "example"], ", as well as ", :Figure[:Alt("Images"), :href("/bad/path.jpg"), "Images"], " (including ", :Figure[:Alt("Reference"), :href("#Reference"), "Reference"], " style) ", :Link[:href("http://google.com"), "http://google.com"]],
 ];
 
 $renderer.pdf.save-as: "tmp/page-tree.pdf";
