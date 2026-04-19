@@ -1,5 +1,5 @@
 use v6;
-use Text::Markdown::Document;
+use Text::Markdown;
 use Markdown::To::PDF::TagsTree;
 use PDF::Tags::Render;
 use PDF::API6;
@@ -16,9 +16,9 @@ It has two
 paragraphs.
 TEXT
 
-my Text::Markdown::Document:D $document .= new($text);
+my Text::Markdown:D $md = parse-markdown($text);
 my Markdown::To::PDF::TagsTree $reader .= new;
-my $doc-ast = $reader.render: $document;
+my $doc-ast = $reader.render: $md;
 my %role-map := $reader.role-map;
 
 is-deeply %role-map, %( HR => :Artifact[ :Placement<Block> ] );
@@ -39,7 +39,7 @@ lives-ok {
 ## next text with lists
 
 $reader .= new;
-$document .= new: q:to/TEXT/;
+$md = parse-markdown q:to/TEXT/;
  -  List One
  -  List Two
 
@@ -61,7 +61,7 @@ $document .= new: q:to/TEXT/;
 
 TEXT
 
-$doc-ast = $reader.render: $document;
+$doc-ast = $reader.render: $md;
 is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
         :L[:LI[:P["List One"]],
@@ -77,7 +77,7 @@ is-deeply $doc-ast , 'Document' => [
  ];
 $renderer.render: $doc-ast;
 
-$document .= new: q:to/TEXT/;
+$md = parse-markdown q:to/TEXT/;
 ```
 # unknown
 code
@@ -89,7 +89,7 @@ code
 
 TEXT
 
-$doc-ast = $reader.render: $document;
+$doc-ast = $reader.render: $md;
 is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
         :P[:Code["# unknown\ncode"]],
@@ -97,7 +97,7 @@ is-deeply $doc-ast , 'Document' => [
 ];
 $renderer.render: $doc-ast;
                                                    
-$document .= new:  q:to/TEXT/;
+$md = parse-markdown q:to/TEXT/;
 This is a *paragraph* with **many** `different` ``inline` elements``.
 [Links](http://google.com), for [example][], as well as ![Images](/bad/path.jpg)
 (including ![Reference][] style) <http://google.com>
@@ -106,7 +106,7 @@ This is a *paragraph* with **many** `different` ``inline` elements``.
 [Reference]: /another/bad/image.jpg
 TEXT
 
-$doc-ast = $reader.render: $document;
+$doc-ast = $reader.render: $md;
 $renderer.render: $doc-ast;
 
 is-deeply $doc-ast , 'Document' => [

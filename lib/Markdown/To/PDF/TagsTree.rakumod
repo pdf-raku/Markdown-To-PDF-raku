@@ -11,7 +11,7 @@ has Bool $.indent;
 has @!item-nums;
 has Text::Markdown::Document $!document;
 
-enum Tags ( :ArtifTagact<Artifact>, :BlockQuote<BlockQuote>, :Caption<Caption>, :CODE<Code>, :Division<Div>, :Document<Document>, :Header<H>, :Label<Lbl>, :LIST<L>, :ListBody<LBody>, :ListItem<LI>, :FootNote<FENote>, :Reference<Reference>, :Paragraph<P>, :Quote<Quote>, :Span<Span>, :Section<Sect>, :Table<Table>, :TableBody<TBody>, :TableHead<THead>, :TableHeader<TH>, :TableData<TD>, :TableRow<TR>, :Link<Link>, :Emphasis<Em>, :Strong<Strong>, :Title<Title>, :Figure<Figure> );
+enum Tags ( :Artifact<Artifact>, :BlockQuote<BlockQuote>, :Caption<Caption>, :CODE<Code>, :Division<Div>, :Document<Document>, :Header<H>, :Label<Lbl>, :LIST<L>, :ListBody<LBody>, :ListItem<LI>, :FootNote<FENote>, :Reference<Reference>, :Paragraph<P>, :Quote<Quote>, :Span<Span>, :Section<Sect>, :Table<Table>, :TableBody<TBody>, :TableHead<THead>, :TableHeader<TH>, :TableData<TD>, :TableRow<TR>, :Link<Link>, :Emphasis<Em>, :Strong<Strong>, :Title<Title>, :Figure<Figure> );
 
 proto method render($, *% --> Pair) {*}
 
@@ -25,19 +25,21 @@ method !block(Str:D $tag, $md, |c) {
     }
 }
 
+multi method render(::?CLASS:D: Text::Markdown $md) {
+    temp $!document = $md.document;
+    self!block: Document, Lang => $!lang, $!document;
+}
+
 multi method render(::?CLASS:D: Text::Markdown::Document $md) {
-    if @!tags {
-        self.render($_) for $md.items;
-    }
-    else {
-        temp $!document = $md;
-        self!block: Document, Lang => $!lang, $md;
-    }
+    self.render($_) for $md.items;
 }
 
 multi method render(Text::Markdown::Heading $md) {
-    my UInt:D $level = $md.level.&min(6).&max(1);
-    self!tag: 'H' ~ $level, {
+    my %atts;
+    my UInt:D $level = $md.level;
+    # map H7, H8, ... -> P
+    %atts<role> = 'P' if $level > 6;
+    self!tag: 'H' ~ $level, |%atts, {
         self!add-content: $md.text;
     }
 }
@@ -62,15 +64,15 @@ multi method render(Text::Markdown::Code $md) {
 }
 
 multi method render(Text::Markdown::CodeBlock $md) {
-     self!tag: Paragraph, {
-         my %atts;
-         if $md.lang -> $lang {
-             %atts<role> = $lang.lc;
-         }
-         self!tag: CODE, |%atts, {
-             self.render: $md.text
-         }
-    }
+    self!tag: Paragraph, {
+        my %atts;
+        if $md.lang -> $lang {
+            %atts<role> = $lang.lc;
+        }
+        self!tag: CODE, |%atts, {
+            self.render: $md.text
+        }
+   }
 }
 
 multi method render(Text::Markdown::List $md) {
@@ -125,8 +127,8 @@ multi method render(Text::Markdown::Image $md) {
 }
 
 multi method render(Str:D $text) {
-        $!inlining = True;
-        self!add-content: $text;
+    $!inlining = True;
+    self!add-content: $text;
 }
 
 method !indent($n = 0) {
@@ -162,4 +164,5 @@ method !tag(Str:D $tag, &code = sub {}, :$inline, *%atts) {
 method !add-content($c) {
     die "no active tags" unless @!tags;
     @!tags.tail.value.push: $c;
+    @!tags.tail;
 }
