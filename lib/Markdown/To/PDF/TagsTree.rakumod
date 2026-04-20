@@ -6,7 +6,6 @@ has Pair:D @!tags;
 has Str:D $.lang = 'en';
 has $!level = 1;
 has Bool $!inlining = False;
-has %.role-map;
 has Bool $.indent;
 has @!item-nums;
 has Text::Markdown::Document $!document;
@@ -45,8 +44,7 @@ multi method render(Text::Markdown::Heading $md) {
 }
 
 multi method render(Text::Markdown::Rule $md) {
-    %!role-map<HR> //= :Artifact[ :Placement<Block> ];
-    self!tag: 'HR';
+    self!tag: Artifact, :role<HR>, :Placement<Block>;
 }
 
 multi method render(Text::Markdown::Paragraph $md) {
@@ -161,7 +159,7 @@ method !tag(Str:D $tag, &code = sub {}, :$inline, *%atts) {
     $tag-ast;
 }
 
-method !add-content($c) {
+method !add-content(Str $c) {
     die "no active tags" unless @!tags;
     @!tags.tail.value.push: $c;
     @!tags.tail;

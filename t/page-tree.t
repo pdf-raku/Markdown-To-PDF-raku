@@ -16,22 +16,20 @@ It has two
 paragraphs.
 TEXT
 
-my Text::Markdown:D $md = parse-markdown($text);
+my Text::Markdown:D $md = $text.&parse-markdown;
+
 my Markdown::To::PDF::TagsTree $reader .= new;
 my $doc-ast = $reader.render: $md;
-my %role-map := $reader.role-map;
-
-is-deeply %role-map, %( HR => :Artifact[ :Placement<Block> ] );
 
 is-deeply $doc-ast, 'Document' => [
        :Lang<en>,
        :H2["Markdown Test"],
        :P["This is a simple markdown document."],
-       :HR[],
+       :Artifact[:Placement<Block>, :role<HR>],
        :P["It has two paragraphs."],
    ];
 
-my PDF::Tags::Render $renderer .= new: :%role-map;
+my PDF::Tags::Render $renderer .= new;
 lives-ok {
     $renderer.render: $doc-ast;
 }
@@ -65,15 +63,15 @@ $doc-ast = $reader.render: $md;
 is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
         :L[:LI[:P["List One"]],
-            :LI[:P["List Two"]]],
+           :LI[:P["List Two"]]],
         :BlockQuote[:P["blockquote fun"]],
         :P[:Code["code\nblock"]],
         :L[:LI[:P["Block List One"]],
-            :LI[:P["Block List Two"]]],
+           :LI[:P["Block List Two"]]],
         :L[:LI[:P["ol One"]],
-            :LI[:L[:LI[:P["ol Two"]]]]],
+           :LI[:L[:LI[:P["ol Two"]]]]],
         :L[:LI[:P["Other List One"]],
-            :LI[:P["Other List Two"]]],
+           :LI[:P["Other List Two"]]],
  ];
 $renderer.render: $doc-ast;
 
@@ -111,7 +109,10 @@ $renderer.render: $doc-ast;
 
 is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
-        :P["This is a ", :Em["paragraph"], " with ", :Strong["many"], " ", :Code["different"], " ", :Code["inline` elements"], ". ", :Link[:href("http://google.com"), "Links"], ", for ", :Link[:href("#example"), "example"], ", as well as ", :Figure[:Alt("Images"), :href("/bad/path.jpg"), "Images"], " (including ", :Figure[:Alt("Reference"), :href("#Reference"), "Reference"], " style) ", :Link[:href("http://google.com"), "http://google.com"]],
+        :P["This is a ", :Em["paragraph"], " with ", :Strong["many"], " ", :Code["different"], " ", :Code["inline` elements"], ". ",
+           :Link[:href("http://google.com"), "Links"], ", for ", :Link[:href("#example"), "example"], ", as well as ",
+           :Figure[:Alt("Images"), :href("/bad/path.jpg"), "Images"], " (including ", :Figure[:Alt("Reference"), :href("#Reference"), "Reference"]
+           , " style) ", :Link[:href("http://google.com"), "http://google.com"]],
 ];
 
 $renderer.pdf.save-as: "tmp/page-tree.pdf";

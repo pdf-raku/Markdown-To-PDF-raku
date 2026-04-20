@@ -10,11 +10,10 @@ use PDF::Tags::Render::Writer;
 sub read-batch($renderer, Text::Markdown $md, PDF::Content::PageTree:D $pages, $frag, |c) is hidden-from-backtrace {
     my Markdown::To::PDF::TagsTree $md-reader .= new;
     my PDF::Tags::Render::Writer $writer = $renderer.writer: :$pages, :$frag;
-    my Pair:D $pdf-ast = $md-reader.render($md);
-    my Hash:D $info = $writer.write-batch($pdf-ast<Document>, $frag);
+    my Pair:D $doc-ast = $md-reader.render($md);
+    my Hash:D $info = $writer.write-batch($doc-ast<Document>, $frag);
     my Hash:D $index = $writer.index;
     my @toc = $writer.toc;
-
     %( :@toc, :$index, :$frag, :$info);
 }
 
