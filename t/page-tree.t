@@ -29,10 +29,10 @@ my $doc-ast = $text.&parse-markdown;
 
 is-deeply $doc-ast, 'Document' => [
        :Lang<en>,
-       :H2["Markdown", "Test"],
-       :P["This", "is", "a", "simple", "markdown", "document.", "It", "has", "two", "lines." ],
+       :H2["Markdown Test "],
+       :P["This is a simple markdown document. It has two lines." ],
        :Artifact[:role<HR>, :Placement<Block>],
-       :P["It", "has", "two", "paragraphs."],
+       :P["It has two paragraphs."],
    ];
 
 my PDF::Tags::Render $renderer .= new;
@@ -64,24 +64,21 @@ $doc-ast = parse-markdown q:to/TEXT/;
 
 TEXT
 
-is-deeply $doc-ast , 'Document'
- => [
+is-deeply $doc-ast , 'Document' => [
      :Lang("en"),
-     :L[:LI[:P["List", "One"]],
-        :LI[:P["List", "Two"]]],
-     :BlockQuote[:P["blockquote", "fun"]],
+     :L[:LI[:P["List One"]],
+        :LI[:P["List Two"]]],
+     :BlockQuote[:P["blockquote\nfun\n"]],
      :P[:Code["code\nblock\n"]],
-     :L[:LI[:P["Block", "List", "One"]]],
-     :L[:LI[:P["Block", "List", "Two"]]],
-     :L[:LI[:Lbl["1."], :P["ol", "One"]],
-        :LI[:Lbl["2."], :P["ol", "Two"]]],
-     :L[:LI[:P["Other", "List", "One"]],
-        :LI[:P["Other", "List", "Two"]]],
+     :L[:LI[:P["Block List One"]]],
+     :L[:LI[:P["Block List Two"]]],
+     :L[:LI[:Lbl["1."], :P["ol One"]],
+        :LI[:Lbl["2."], :P["ol Two"]]],
+     :L[:LI[:P["Other List One"]],
+        :LI[:P["Other List Two"]]],
  ];
 
 $renderer.render: $doc-ast;
-
-fail "todo - remaining tests";
 
 $doc-ast = parse-markdown q:to/TEXT/;
 ```
@@ -97,8 +94,8 @@ TEXT
 
 is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
-        :P[:Code["# unknown\ncode"]],
-        :P[:Code[:role("raku"), "# raku code"]]
+        :P[:Code["# unknown\ncode\n"]],
+        :P[:Code[:role("raku"), "# raku code\n"]]
 ];
                                                    
 $doc-ast = parse-markdown q:to/TEXT/;
@@ -114,10 +111,10 @@ $renderer.render: $doc-ast;
 
 is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
-        :P["This is a ", :Em["paragraph"], " with ", :Strong["many"], " ", :Code["different"], " ", :Code["inline` elements"], ". ",
-           :Link[:href("http://google.com"), "Links"], ", for ", :Link[:href("#example"), "example"], ", as well as ",
+        :P["This is a ", :Em["paragraph"], " with ", :Strong["many"], " ", :Code["different"], " ", :Code["inline` elements"], ".",
+           :Link[:href("http://google.com"), "Links"], ", for", :Link[:href("#example"), "example"], ",", " as well as ",
            :Figure[:Alt("Images"), :href("/bad/path.jpg"), "Images"], " (including ", :Figure[:Alt("Reference"), :href("#Reference"), "Reference"]
-           , " style) ", :Link[:href("http://google.com"), "http://google.com"]],
+           , "style) ", :Link[:href("http://google.com"), "http://google.com"]],
 ];
 
 $renderer.pdf.save-as: "tmp/page-tree.pdf";
