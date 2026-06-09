@@ -29,7 +29,7 @@ my $doc-ast = $text.&parse-markdown;
 
 is-deeply $doc-ast, 'Document' => [
        :Lang<en>,
-       :H2["Markdown Test "],
+       :H2["Markdown Test"],
        :P["This is a simple markdown document. It has two lines." ],
        :Artifact[:role<HR>, :Placement<Block>],
        :P["It has two paragraphs."],

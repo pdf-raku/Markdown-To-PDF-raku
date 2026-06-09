@@ -63,6 +63,11 @@ sub coalesce(@words) {
     }
     $text ?? @phrase.push($text) !! @phrase;
 }
+
+sub trim(@words) {
+    @words.pop if @words.tail ~~ ' ';
+    @words;
+}
     
 method words($/) {
     make @<word>>>.made.&coalesce;
@@ -103,7 +108,7 @@ method block:sym<quoted>($/) {
 
 method block:sym<header>($/) {
     my UInt $level = $<level>.chars;
-    make 'H' ~ $level => $<word>>>.made.&coalesce;
+    make 'H' ~ $level => $<word>>>.made.&trim.&coalesce;
 }
 
 method list-item($/) {
@@ -137,8 +142,8 @@ method text-line($/) {
 method block:sym<paragraph>($/) {
     my @words;
     for @<text-line> {
-        @words.push: ' ' if @words && @words.tail ne ' ';
-        @words.append: .made;
+        @words.push: ' ' if @words;
+        @words.append: .made.&trim;
     }
     @words .= &coalesce;
     if $<underline> {
