@@ -25,7 +25,7 @@ grammar Markdown::To::PDF::Grammar {
     }
     token quote-line { \h**0..3 [$<q>='>' \h*]+ <words> <.eol> }
     token block:sym<quoted> { <quote-line>+ }
-    token indented-code { ^^ $<indent>=[\h**4 \h*] $<line>=\N* <.eol>}
+    token indented-code { ^^ $<indent>=[\h**4] $<line>=\N* <.eol>}
     token block:sym<indented-code> {
         <line=.indented-code> [<line=.indented-code> | <line=.blank-line>]*
     }

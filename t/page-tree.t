@@ -30,7 +30,7 @@ my $doc-ast = $text.&parse-markdown;
 is-deeply $doc-ast, 'Document' => [
        :Lang<en>,
        :H2["Markdown Test"],
-       :P["This is a simple markdown document. It has two lines." ],
+       :P["This is a simple markdown document. It has two lines."],
        :Artifact[:role<HR>, :Placement<Block>],
        :P["It has two paragraphs."],
    ];
@@ -53,7 +53,8 @@ Block and List tests
 > fun
 
     code
-    block
+
+     block
 
  -  Block List One
 
@@ -69,11 +70,11 @@ TEXT
 
 is-deeply $doc-ast , 'Document' => [
      :Lang("en"),
-     :H1([:P(["Block and List tests"])]), 
+     :H1[:P["Block and List tests"]],
      :L[:LI[:P["List One"]],
         :LI[:P["List Two"]]],
      :BlockQuote[:P["blockquote\nfun\n"]],
-     :P[:Code["code\nblock\n"]],
+     :P[:Code["code\n\n block\n"]],
      :L[:LI[:P["Block List One"]]],
      :L[:LI[:P["Block List Two"]]],
      :L[:LI[:Lbl["1."], :P["ol One"]],
@@ -85,6 +86,8 @@ is-deeply $doc-ast , 'Document' => [
 $renderer.render: $doc-ast;
 
 $doc-ast = parse-markdown q:to/TEXT/;
+Fenced Code tests
+----------
 ```
 # unknown
 code
@@ -98,10 +101,11 @@ TEXT
 
 is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
+        :H2[:P["Fenced Code tests"]],
         :P[:Code["# unknown\ncode\n"]],
         :P[:Code[:role("raku"), "# raku code\n"]]
 ];
-                                                   
+
 $doc-ast = parse-markdown q:to/TEXT/;
 This is a *paragraph* with **many** `different` ``inline` elements``.
 [Links](http://google.com), for [example][], as well as ![Images](/bad/path.jpg)
