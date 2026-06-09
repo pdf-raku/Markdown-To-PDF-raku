@@ -38,9 +38,9 @@ grammar Markdown::To::PDF::Grammar {
     token num { <digits> +%% \. }
     token olist-item {^^ $<indent>=\h**0..3 <num> \h* <words> <.eol> [<!olist-item><block>]?}
     token block:sym<olist> { <olist-item>+ }
-    proto token underline {*}
-    token underline:sym<single> {^^ '-'+ <.eol> }
-    token underline:sym<double> {^^ '='+ <.eol> }
-    token text-line {^^ \h**0..3 <word><words> <.eol>}
-    token block:sym<paragraph> { <text-line> [<!underline><text-line>]* <underline>? }
+    proto token header-underline {*}
+    token header-underline:sym<h1> {^^ '='+ <.eol> }
+    token header-underline:sym<h2> {^^ '-'+ <.eol> }
+    token para-line {^^ \h**0..3 <word><words> <.eol>}
+    token block:sym<para-or-header> { <para-line> [<!header-underline><para-line>]* <header-underline>? }
 }

@@ -43,6 +43,9 @@ lives-ok {
 
 $reader .= new;
 $doc-ast = parse-markdown q:to/TEXT/;
+Block and List tests
+====================
+
  -  List One
  -  List Two
 
@@ -66,6 +69,7 @@ TEXT
 
 is-deeply $doc-ast , 'Document' => [
      :Lang("en"),
+     :H1([:P(["Block and List tests"])]), 
      :L[:LI[:P["List One"]],
         :LI[:P["List Two"]]],
      :BlockQuote[:P["blockquote\nfun\n"]],

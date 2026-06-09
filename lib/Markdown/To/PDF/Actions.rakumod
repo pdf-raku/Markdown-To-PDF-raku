@@ -133,22 +133,29 @@ method block:sym<olist>($/) {
     make (:@L);
 }
 
-method text-line($/) {
+method para-line($/) {
     my @words = $<word>.made;
     @words.append: .made with $<words>;
-    make @words;
+    make @words.&trim;
 }
 
-method block:sym<paragraph>($/) {
+method header-underline:sym<h1>($/) { make 'H1' }
+method header-underline:sym<h2>($/) { make 'H2' }
+
+method block:sym<para-or-header>($/) {
     my @words;
-    for @<text-line> {
+    for @<para-line> {
         @words.push: ' ' if @words;
-        @words.append: .made.&trim;
+        @words.append: .made;
     }
-    @words .= &coalesce;
-    if $<underline> {
-        warn "todo: underline";
+
+    my $P := @words.&coalesce;
+
+    make do with $<header-underline> {
+        .made => [:$P];
     }
-    make 'P' => @words;
+    else {
+        :$P;
+    }
 }
 
