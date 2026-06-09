@@ -13,7 +13,9 @@
     "name": "Markdown::To::PDF",
   "provides": {
     "Markdown::To::PDF": "lib/Markdown/To/PDF.rakumod",
-    "Markdown::To::PDF::TagsTree": "lib/Markdown/To/PDF/TagsTree.rakumod"
+    "Markdown::To::PDF::TagsTree": "lib/Markdown/To/PDF/TagsTree.rakumod",
+      "Markdown::To::PDF::Grammar": "lib/Markdown/To/PDF/Grammar.rakumod",
+    "Markdown::To::PDF::Actions": "lib/Markdown/To/PDF/Actions.rakumod"
   },
   "resources": [
   ],

@@ -3,14 +3,14 @@ unit class Markdown::To::PDF;
 use PDF::Tags::Render;
 also is PDF::Tags::Render;
 
-use Text::Markdown;
-use Markdown::To::PDF::TagsTree;
+use Markdown::To::PDF::Grammar;
+use Markdown::To::PDF::Actions;
 use PDF::Tags::Render::Writer;
 
 sub read-batch($renderer, Text::Markdown $md, PDF::Content::PageTree:D $pages, $frag, |c) is hidden-from-backtrace {
-    my Markdown::To::PDF::TagsTree $md-reader .= new;
-    my PDF::Tags::Render::Writer $writer = $renderer.writer: :$pages, :$frag;
-    my Pair:D $doc-ast = $md-reader.render($md);
+    my Markdown::To::PDF::Actions $actions .= new;
+    Markdown::To::PDF::Grammar.parse: $text, :$actions
+    my Pair:D $doc-ast = $/.made;
     my Hash:D $info = $writer.write-batch($doc-ast<Document>, $frag);
     my Hash:D $index = $writer.index;
     my @toc = $writer.toc;
