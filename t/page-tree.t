@@ -1,5 +1,4 @@
 use v6;
-use Markdown::To::PDF::TagsTree;
 use Markdown::To::PDF::Grammar;
 use Markdown::To::PDF::Actions;
 use PDF::Tags::Render;
@@ -24,51 +23,53 @@ sub parse-markdown($text) {
     $/.made;
 }
 
-my Markdown::To::PDF::TagsTree $reader .= new;
-my $doc-ast = $text.&parse-markdown;
-
-is-deeply $doc-ast, 'Document' => [
-       :Lang<en>,
-       :H2["Markdown Test"],
-       :P["This is a simple markdown document. It has two lines."],
-       :Artifact[:role<HR>, :Placement<Block>],
-       :P["It has two paragraphs."],
-   ];
-
 my PDF::Tags::Render $renderer .= new;
-lives-ok {
-    $renderer.render: $doc-ast;
+
+subtest 'basic document', {
+    my Pair:D $doc-ast = $text.&parse-markdown;
+
+    is-deeply $doc-ast, 'Document' => [
+                                       :Lang<en>,
+                                       :H2["Markdown Test"],
+                                       :P["This is a simple markdown document. It has two lines."],
+                                       :Artifact[:role<HR>, :Placement<Block>],
+                                       :P["It has two paragraphs."],
+                                   ];
+
+    lives-ok {
+        $renderer.render: $doc-ast;
+    }, 'render'
 }
 ## next text with lists
 
-$reader .= new;
-$doc-ast = parse-markdown q:to/TEXT/;
-Block and List tests
-====================
+subtest 'block and list tests', {
+    my Pair:D $doc-ast = parse-markdown q:to/TEXT/;
+    Block and List tests
+    ====================
 
- -  List One
- -  List Two
+     -  List One
+     -  List Two
 
-> blockquote
-> fun
+    > blockquote
+    > fun
 
-    code
+        code
 
-     block
+         block
 
- -  Block List One
+     -  Block List One
 
- -  Block List Two
+     -  Block List Two
 
- 1. ol One
- 2. ol Two
+     1. ol One
+     2. ol Two
 
-* Other List One
-* Other List Two
+    * Other List One
+    * Other List Two
 
-TEXT
+    TEXT
 
-is-deeply $doc-ast , 'Document' => [
+    is-deeply $doc-ast , 'Document' => [
      :Lang("en"),
      :H1[:P["Block and List tests"]],
      :L[:LI[:P["List One"]],
@@ -83,48 +84,55 @@ is-deeply $doc-ast , 'Document' => [
         :LI[:P["Other List Two"]]],
  ];
 
-$renderer.render: $doc-ast;
+    $renderer.render: $doc-ast;
+}
 
-$doc-ast = parse-markdown q:to/TEXT/;
-Fenced Code tests
-----------
-```
-# unknown
-code
-```
+subtest 'fenced code tests', {
+    my Pair:D $doc-ast = parse-markdown q:to/TEXT/;
+    Fenced Code tests
+    ----------
+    ```
+    # unknown
+    code
+    ```
 
-```raku
-# raku code
-```
+    ```raku
+    # raku code
+    ```
 
-TEXT
+    TEXT
 
-is-deeply $doc-ast , 'Document' => [
+    is-deeply $doc-ast , 'Document' => [
         :Lang("en"),
         :H2[:P["Fenced Code tests"]],
         :P[:Code["# unknown\ncode\n"]],
         :P[:Code[:role("raku"), "# raku code\n"]]
-];
+    ];
+}
 
-$doc-ast = parse-markdown q:to/TEXT/;
-This is a *paragraph* with **many** `different` ``inline` elements``.
-[Links](http://google.com), for [example][], as well as ![Images](/bad/path.jpg)
-(including ![Reference][] style) <http://google.com>
+subtest 'various inline elements', {
+    my Pair:D $doc-ast = parse-markdown q:to/TEXT/;
+    This is a *paragraph* with **many** `different` ``inline` elements``.
+    [Links](http://google.com), for [example][], as well as ![Images](/bad/path.jpg)
+    (including ![Reference][] style) <http://google.com>
 
-[example]: http://example.com
-[Reference]: /another/bad/image.jpg
-TEXT
+    [example]: http://example.com
+    [Reference]: /another/bad/image.jpg
+    TEXT
 
-$renderer.render: $doc-ast;
+    dd :$doc-ast;
 
-is-deeply $doc-ast , 'Document' => [
-        :Lang("en"),
-        :P["This is a ", :Em["paragraph"], " with ", :Strong["many"], " ", :Code["different"], " ", :Code["inline` elements"], ".",
-           :Link[:href("http://google.com"), "Links"], ", for", :Link[:href("#example"), "example"], ",", " as well as ",
-           :Figure[:Alt("Images"), :href("/bad/path.jpg"), "Images"], " (including ", :Figure[:Alt("Reference"), :href("#Reference"), "Reference"]
-           , "style) ", :Link[:href("http://google.com"), "http://google.com"]],
-];
+    $renderer.render: $doc-ast;
 
+    is-deeply $doc-ast , 'Document' => [
+            :Lang("en"),
+            :P["This is a ", :Em["paragraph"], " with ", :Strong["many"], " ", :Code["different"], " ", :Code["inline` elements"], ".",
+               :Link[:href("http://google.com"), "Links"], ", for", :Link[:href("#example"), "example"], ",", " as well as ",
+               :Figure[:Alt("Images"), :href("/bad/path.jpg"), "Images"], " (including ", :Figure[:Alt("Reference"), :href("#Reference"), "Reference"]
+               , "style) ", :Link[:href("http://google.com"), "http://google.com"]],
+    ];
+
+}
 $renderer.pdf.save-as: "tmp/page-tree.pdf";
 
 done-testing;

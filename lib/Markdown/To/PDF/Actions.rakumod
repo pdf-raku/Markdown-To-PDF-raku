@@ -3,6 +3,7 @@
 unit class Markdown::To::PDF::Actions;
 
 has $!Lang = 'en';
+has %!ref;
 
 use Method::Also;
 
@@ -24,10 +25,47 @@ multi sub style(1, @made) {Em => @made}
 multi sub style(2, @made) {Strong => @made}
 multi sub style(3, @made) {Strong => (Em => @made)}
 
-method inline:sym<link>($/) {
+method anchor($/) { make $<text>.Str }
+
+method link:sym<text-and-url>($/) {
     my $href = $<url>.Str;
-    make 'Link' => [:$href, $<text>.Str];
+    make 'Link' => [:$href, $<text>.made];
 }
+
+method link:sym<text-and-ref>($/) {
+    my $text = $<text>.made;
+    my $id = .made with $<ref>;
+    $id ||= $text;
+
+    my @Link = [Any, $text];
+    if %!ref{$id}:exists {
+        @Link[0] := %!ref{$id};
+    }
+    else {
+        %!ref{$id} := @Link[0];
+        %!ref{$id} = :href<#>;
+    }
+    make (:@Link);
+}
+
+method link-def($/) {
+    my $id = $<ref>.made;
+    my $href = $<url>.Str;
+    %!ref{$id} = :$href;
+    make [];
+}
+
+method link:sym<quoted>($/) {
+    my $href = $<url>.Str;
+    make 'Link' => [:$href, $href];
+}
+
+method link:sym<absolute>($/) {
+    my $href = $<url>.Str;
+    make 'Link' => [:$href, $href];
+}
+
+method inline:sym<link>($/) { make $<link>.made }
 
 method inline:sym<em1>($/) {
     make $0.chars.&style: $<words>.made;
@@ -158,4 +196,3 @@ method block:sym<para-or-header>($/) {
         :$P;
     }
 }
-
