@@ -27,12 +27,12 @@ multi sub style(3, @made) {Strong => (Em => @made)}
 
 method anchor($/) { make $<text>.Str }
 
-method link:sym<text-and-url>($/) {
+method link:sym<hyper>($/) {
     my $href = $<url>.Str;
     make 'Link' => [:$href, $<text>.made];
 }
 
-method link:sym<text-and-ref>($/) {
+method link:sym<ref>($/) {
     my $text = $<text>.made;
     my $id = .made with $<ref>;
     $id ||= $text;
@@ -65,7 +65,18 @@ method link:sym<absolute>($/) {
     make 'Link' => [:$href, $href];
 }
 
-method inline:sym<link>($/) { make $<link>.made }
+method inline:sym<link>($/) {
+    make do given $<link>.made {
+        if $<image> {
+            my $Alt = .<Link>[1];
+            .<Link>[1] = :$Alt;
+            'Figure' => .<Link>
+        }
+        else {
+            $_;
+        }
+    }
+}
 
 method inline:sym<em1>($/) {
     make $0.chars.&style: $<words>.made;

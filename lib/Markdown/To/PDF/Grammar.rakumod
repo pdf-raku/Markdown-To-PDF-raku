@@ -25,13 +25,13 @@ grammar Markdown::To::PDF::Grammar {
     rule link-def { ^^ <ref=.anchor> ':' <url> <.eol> }
 
     proto token link {*}
-    token link:sym<text-and-url>  { <text=.anchor> '(' ~ ')' $<url>=<.uri>? }
-    token link:sym<text-and-ref>  { <text=.anchor> <ref=.anchor>? }
-    token link:sym<quoted>        { '<' ~ '>' <url=.uri> }
-    token link:sym<absolute>      { <url=.absolute-uri> }
+    token link:sym<hyper>    { <text=.anchor> '(' ~ ')' $<url>=<.uri>? }
+    token link:sym<ref>      { <text=.anchor> <ref=.anchor>? }
+    token link:sym<quoted>   { '<' ~ '>' <url=.uri> }
+    token link:sym<absolute> { <url=.absolute-uri> }
 
     proto token inline {*}
-    token inline:sym<link> { <link> }
+    token inline:sym<link> { [$<image>=\!]? <link> }
     token inline:sym<em1> {('*'**1..3) ~ '*'+ <words> }
     token inline:sym<em2> {('_'**1..3) ~ '_'+ <words> }
     token inline:sym<code> {(\`+) ~ $0 $<code>=.*? }
