@@ -150,7 +150,7 @@ method block:sym<quoted>($/) {
     my @words;
     for @<quote-line> {
         @words.append: .made;
-        @words.append: "\n";
+        @words.push: "\n";
     }
     make 'BlockQuote' => [P => @words.&coalesce];
 }

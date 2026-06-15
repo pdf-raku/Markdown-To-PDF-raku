@@ -1,11 +1,10 @@
 unit class Markdown::To::PDF;
 
-use PDF::Tags::Render;
-also is PDF::Tags::Render;
+use PDF::Render::Simple;
 
 use Markdown::To::PDF::Grammar;
 use Markdown::To::PDF::Actions;
-use PDF::Tags::Render::Writer;
+use PDF::Render::Simple::Writer;
 
 sub read-batch($renderer, Text::Markdown $md, PDF::Content::PageTree:D $pages, $frag, |c) is hidden-from-backtrace {
     my Markdown::To::PDF::Actions $actions .= new;
@@ -25,7 +24,7 @@ sub read($renderer, Text::Markdown $md, |c) {
 
 method render(
     Text::Markdown $md,
-    :$renderer is copy = PDF::Tags::Render,
+    :$renderer is copy = PDF::Render::Simple,
     Numeric:D :$width  = 612,
     Numeric:D :$height = 792,
     Numeric:D :$margin = 20,

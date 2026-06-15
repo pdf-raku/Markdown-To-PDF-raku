@@ -1,7 +1,7 @@
 use v6;
 use Markdown::To::PDF::Grammar;
 use Markdown::To::PDF::Actions;
-use PDF::Tags::Render;
+use PDF::Render::Simple;
 use PDF::API6;
 use Test;
 
@@ -23,18 +23,18 @@ sub parse-markdown($text) {
     $/.made;
 }
 
-my PDF::Tags::Render $renderer .= new;
+my PDF::Render::Simple $renderer .= new;
 
 subtest 'basic document', {
     my Pair:D $doc-ast = $text.&parse-markdown;
 
     is-deeply $doc-ast, 'Document' => [
-                                       :Lang<en>,
-                                       :H2["Markdown Test"],
-                                       :P["This is a simple markdown document. It has two lines."],
-                                       :Artifact[:role<HR>, :Placement<Block>],
-                                       :P["It has two paragraphs."],
-                                   ];
+       :Lang<en>,
+       :H2["Markdown Test"],
+       :P["This is a simple markdown document. It has two lines."],
+       :Artifact[:role<HR>, :Placement<Block>],
+       :P["It has two paragraphs."],
+    ];
 
     lives-ok {
         $renderer.render: $doc-ast;
