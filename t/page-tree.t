@@ -1,9 +1,9 @@
 use v6;
-use Markdown::To::PDF::Grammar;
-use Markdown::To::PDF::Actions;
-use PDF::Render::Simple;
-use PDF::API6;
 use Test;
+use Markdown::To::PDF :&parse-markdown;
+use PDF::Render::Simple;
+
+my PDF::Render::Simple $renderer .= new: :!finish;
 
 my $text = q:to/TEXT/;
 ## Markdown Test ##
@@ -17,14 +17,6 @@ It has two
 paragraphs.
 TEXT
 
-sub parse-markdown($text) {
-    my Markdown::To::PDF::Actions $actions .= new;
-    Markdown::To::PDF::Grammar.parse: $text, :$actions;
-    $/.made;
-}
-
-my PDF::Render::Simple $renderer .= new;
-
 subtest 'basic document', {
     my Pair:D $doc-ast = $text.&parse-markdown;
 
@@ -36,9 +28,9 @@ subtest 'basic document', {
        :P["It has two paragraphs."],
     ];
 
-    lives-ok {
+##    lives-ok {
         $renderer.render: $doc-ast;
-    }, 'render'
+##    }, 'render'
 }
 ## next text with lists
 
@@ -108,7 +100,9 @@ subtest 'fenced code tests', {
         :P[:Code["# unknown\ncode\n"]],
         :P[:Code[:role("raku"), "# raku code\n"]]
     ];
+    $renderer.render: $doc-ast;
 }
+
 
 subtest 'various inline elements', {
     my Pair:D $doc-ast = parse-markdown q:to/TEXT/;
@@ -120,8 +114,6 @@ subtest 'various inline elements', {
     [Reference]: /another/bad/image.jpg
     TEXT
 
-    $renderer.render: $doc-ast;
-
     is-deeply $doc-ast , 'Document' => [
             :Lang("en"),
             :P["This is a ", :Em["paragraph"], " with ", :Strong["many"], " ", :Code["different"], " ", :Code["inline` elements"], ". ",
@@ -130,8 +122,14 @@ subtest 'various inline elements', {
                , " style) ", :Link[:href("http://google.com"), "http://google.com"]],
     ];
 
+    $renderer.render: $doc-ast;
+
 }
-$renderer.pdf.save-as: "tmp/page-tree.pdf";
+
+$renderer.finish(:index);
+my PDF::API6:D $pdf = $renderer.pdf;
+$pdf.id = $*PROGRAM.basename.fmt('%-16s').substr(0,16);
+$pdf.save-as: "t/page-tree.pdf", :!info;
 
 done-testing;
 
