@@ -93,8 +93,71 @@ method inline:sym<code>($/) {
 
 method text($/) { make $/.Str }
 
-method word($/) {
+method table-cell-text($/) {
+    # Unescape \| inside cell text
+    make $/.Str.subst('\|', '|', :g);
+}
+
+method table-cell-word($/) {
     make $<ws>.chars ?? [$<inline>.made, ' '].Slip !! $<inline>.made;
+}
+
+method table-cell($/) {
+    # Reuse your existing trim & coalesce helpers for clean inline spans
+    make @<table-cell-word>>>.made.&trim.&coalesce;
+}
+
+method table-row($/) {
+    make @<table-cell>>>.made;
+}
+
+method table-align($/) {
+    make do {
+        when $<left> && $<right> { 'Center' }
+        when $<left>             { 'Start'  }
+        when $<right>            { 'End'    }
+        default                  { Nil      }
+    };
+}
+
+method table-delim($/) {
+    make @<table-align>>>.made;
+}
+
+method block:sym<table>($/) {
+    my @aligns  = $<table-delim>.made;
+    my @headers = $<header>.made;
+    my $cols    = @headers.elems;
+
+    # Build header row (TR containing TH elements)
+    my @th-cells = @headers.pairs.map: -> (:key($i), :value(@content)) {
+        my @cell = @content;
+        @cell.unshift('TextAlign' => $_) with @aligns[$i];
+        'TH' => @cell;
+    };
+    my @Table = 'THead' => ['TR' => @th-cells];
+    # Build body rows (TR containing TD elements)
+    my @TBody;
+    for @<body-row> -> $row-match {
+        my @cells = $row-match.made;
+        # GFM normalization: pad missing cells and truncate extra cells
+        @cells.push([]) while @cells.elems < $cols;
+
+        my @td-cells = (^$cols).map: -> $i {
+            my @cell = @cells[$i].List;
+            @cell.unshift('TextAlign' => $_) with @aligns[$i];
+            'TD' => @cell;
+        };
+        @TBody.push: 'TR' => @td-cells;
+    }
+    @Table.push: 'TBody' => @TBody;
+    make (:@Table);
+}
+
+method scan($/) { print $/.Str.raku; make '?' ~  $/.Str ~ '?' }
+
+method word($/) {
+    make $<ws> && $<ws>.chars ?? [$<inline>.made, ' '].Slip !! $<inline>.made;
 }
 
 sub coalesce(@words) {

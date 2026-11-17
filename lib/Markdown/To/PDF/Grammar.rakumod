@@ -1,6 +1,6 @@
 grammar Markdown::To::PDF::Grammar {
 
-    token TOP { [<block=.link-def> || <block> | <block=.sep-line>]* }
+    token TOP { [<block=.link-def> || <block> | <block=.sep-line> || <scan> ]* }
     token ws { <!ww>\h* }
     token eol {[\n|$]}
 
@@ -14,7 +14,7 @@ grammar Markdown::To::PDF::Grammar {
         $<scheme>=[ https? | ftp ] '://'
 
         # Match domain name/host
-        $<host>=[\w+] +% \.
+        $<host>=[[\w+] +% '-'] +% \.
 
         # Match optional path, subpath and query strings (excluding ending punctuation like periods)
         [ '/' [ \w+ | <[/.?&=\-+%#]> ]* ]?
@@ -35,9 +35,9 @@ grammar Markdown::To::PDF::Grammar {
     token inline:sym<em1> {('*'**1..3) ~ '*'+ <words> }
     token inline:sym<em2> {('_'**1..3) ~ '_'+ <words> }
     token inline:sym<code> {(\`+) ~ $0 $<code>=.*? }
-    token text {[<![*_<]>\S]+}
+    token text {[<![*_<|]>\S]+}
     token words {<word>*}
-    token word {[<inline>||<inline=.text>]<ws>}
+    token word {[<inline>||<inline=.text>]<ws>?}
 
     proto token block {*}
     token fence { <[`~]> ** 3..* }
@@ -65,4 +65,44 @@ grammar Markdown::To::PDF::Grammar {
     token header-underline:sym<h2> {^^ '-'+ <.eol> }
     token para-line {^^ \h**0..3 <word><words> <.eol>}
     token block:sym<para-or-header> { <para-line> [<!header-underline><para-line>]* <header-underline>? }
+    token table-align {
+        \h* $<left>=':'? '-' ** 3..* $<right>=':'? \h*
+    }
+
+    token table-delim {
+        ^^ \h** 0..3 '|'? [ <table-align> +% '|' ] '|'? \h* <.eol>
+    }
+
+    token table-cell-text {
+        [ '\\|' | <-[|\n]> ]+
+    }
+
+    token table-cell-word {
+        [ <inline> || <inline=.table-cell-text> ] $<ws>=\h*
+    }
+
+    token table-cell {
+        \h* $<words>=[ <table-cell-word>* ]
+    }
+
+    token table-row {
+        ^^ \h** 0..3
+        [
+            '|' [ <table-cell> +% '|' ] '|'?   # Leading pipe (trailing optional)
+
+          | <table-cell> ** 2..* % '|'         # No leading pipe (needs >= 1 inner pipe)
+        ]
+        \h* <.eol>
+    }
+
+    token block:sym<table> {
+        $<header>=<table-row>
+        <table-delim>
+        # Enforce GFM rule: header and delimiter column counts must match
+        <?{ $<header><table-cell>.elems == $<table-delim><table-align>.elems }>
+        [ <!blank-line> <!sep-line> $<body-row>=<table-row> ]*
+    }
+
+    # fallback, when all else fails
+    token scan {.}
 }
