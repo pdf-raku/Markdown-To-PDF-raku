@@ -21,7 +21,7 @@ grammar Markdown::To::PDF::Grammar {
     }
     token uri {:i $<uri>=[<absolute-uri> | [ \w+ | <[/.?&=\-+%#]> ]+]}
     token url { '<' ~ '>' <uri> || <uri> }
-    token anchor { '[' ~ ']' $<text>=<-[\[\]]>* }
+    token anchor { '[' ~ ']' $<text>=[<anchor>|<-[\[\]]>*] }
     rule link-def { ^^ <ref=.anchor> ':' <url> <.eol> }
 
     proto token link {*}
@@ -74,7 +74,7 @@ grammar Markdown::To::PDF::Grammar {
     }
 
     token table-cell-text {
-        [ '\\|' | <-[|\n]> ]+
+        [ '\\|' | <!eol><-[|]> ]+
     }
 
     token table-cell-word {
