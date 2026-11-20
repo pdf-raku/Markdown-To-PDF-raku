@@ -9,8 +9,12 @@ use Method::Also;
 
 method TOP($/) {
     my @Document = :$!Lang;
-    @Document.append: .made for @<block>;
+    @Document.append: $<md>.made;
     make (:@Document);
+}
+
+method md($/) {
+    make [@<block>>>.made];
 }
 
 method sep-line:sym<hr>($/) {
@@ -18,7 +22,7 @@ method sep-line:sym<hr>($/) {
 }
 
 method sep-line:sym<blank>($/) {
-    make [];
+    make Empty;
 }
 
 multi sub style(1, @made) {Em => @made}
@@ -52,7 +56,7 @@ method link-def($/) {
     my $id = $<ref>.made;
     my $href = $<url>.Str;
     %!ref{$id} = :$href;
-    make [];
+    make Empty;
 }
 
 method link:sym<quoted>($/) {
@@ -180,7 +184,7 @@ sub trim(@words) {
     @words.pop if @words.tail ~~ ' ';
     @words;
 }
-    
+
 method words($/) {
     make @<word>>>.made.&coalesce;
 }
@@ -225,8 +229,9 @@ method block:sym<header>($/) {
 
 method list-item($/) {
     my @P = $<words>.made;
-    @P.append: .made with $<block>;
-    make 'LI' => [:@P];
+    my @LI = :@P;
+    @LI.append: $<md>.made;
+    make (:@LI);
 }
 
 method block:sym<list>($/) {
@@ -237,7 +242,10 @@ method block:sym<list>($/) {
 method olist-item($/) {
     my @Lbl = $<num>.Str;
     my @P   = $<words>.made;
-    make 'LI' => [:@Lbl, :@P];
+    my @LI = :@Lbl, :@P;
+    @LI.append: $<md>.made;
+
+    make (:@LI);
 }
 
 method block:sym<olist>($/) {
