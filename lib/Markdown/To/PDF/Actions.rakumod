@@ -201,13 +201,13 @@ method blank-line($/) {
     make '';
 }
 method block:sym<indented-code>($/) {
-    make 'P' => [:Code[ @<line>>>.made.join: "\n" ]];
+    make 'P' => [:Code[:Placement<Block>, @<line>>>.made.join: "\n" ]];
 }
 
 method name($/) { make @<alpha>.join }
 
 method block:sym<fenced-code>($/) {
-    my @Code;
+    my @Code = :Placement<Block>;
     @Code.push: 'role' => .made with $<name>;
     @Code.push: $<code>.Str;
     make 'P' => [:@Code];
