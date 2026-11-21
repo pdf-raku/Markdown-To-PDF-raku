@@ -1,9 +1,11 @@
 grammar Markdown::To::PDF::Grammar {
 
     token TOP {<md(0)>}
-    token md($*INDENT) { [<block=.link-def> || <block=.sep-line> || <block> || <?{$*INDENT == 0}> <scan> ]* }
+    token md($*INDENT = 0, :continue($*CONTINUE-INDENT) is copy = False) {
+        [<block=.link-def> || <block=.sep-line> || <block> || <scan> ]*
+    }
+    token eol {[\n|$] { $*CONTINUE-INDENT = False } }
     token ws { <!ww>\h* }
-    token eol {[\n|$]}
 
     proto token sep-line {*}
     token sep-line:sym<blank> {<.blank-line>}
@@ -44,7 +46,7 @@ grammar Markdown::To::PDF::Grammar {
     token fence { <.indent><[`~]> ** 3..* }
     rule name { <alpha>+}
     token block:sym<fenced-code> {
-        ^^ [<fence><name>?<.eol>] ~ [$<fence><.eol>] $<code>=.*?
+        ^^ [<fence><name>?\n] ~ [$<fence><.eol>] $<code>=.*?
     }
     token quote-line { <.indent> [$<q>='>' \h*]+ <words> <.eol> }
     token block:sym<quoted> { <quote-line>+ }
@@ -66,23 +68,35 @@ grammar Markdown::To::PDF::Grammar {
         }
         return $col;
     }
-    token indent {^^ $<leading>=\h* <?{ $*INDENT <= visual-indent($<leading>) <= $*INDENT + 3}> }
+
+    token indent {
+         :my $cont = $*CONTINUE-INDENT;
+         :my $indent = $cont ?? 0 !! $*INDENT;
+         [ <?{$cont}> | ^^ ]
+         $<leading>=\h* <?{ $indent <= visual-indent($<leading>) < $indent + 4}>
+    }
+
+    token code-indent {
+         :my $cont = $*CONTINUE-INDENT;
+         :my $indent = $cont ?? 0 !! $*INDENT;
+         [ <?{$cont}> | ^^ ]
+         $<leading>=\h+
+         <?{ visual-indent($<leading>) >= $indent + 4}>
+    }
+
     token li-indent {^^ $<leading>=\h* <?{ $*INDENT <= visual-indent($<leading>) <= $*INDENT + 1}> }
-    token code-indent {^^ $<leading>=\h* <?{ visual-indent($<leading>) > $*INDENT + 3}> }
     token block:sym<header> {<.indent> $<level>='#'**1..6 \h+ [<!header-end><word>]+ <header-end> }
-    token bp {<[-+*]> }
+    token bp {<[-+*]>}
     token list-item {:my $indent;
-         $<leading>=[<.li-indent> <.bp>] { $indent = visual-indent($<leading>.Str) }
-         \h**1..3 <words> <.eol>
-         <md($indent)>
+         $<leading>=[<.li-indent> <.bp> \h] { $indent = visual-indent($<leading>.Str) }
+         <md($indent, :continue)>
     }
     token block:sym<list> { <list-item>+ }
     token digits {<digit>+ }
     token num { <digits> +%% \. }
     token olist-item {:my $indent;
-        $<leading>=[<.li-indent> <num>] { $indent = visual-indent($<leading>.Str) }
-        \h**1..3 <words> <.eol>
-        <md($indent)>
+        $<leading>=[<.li-indent> <num> \h] { $indent = visual-indent($<leading>.Str) }
+        <md($indent, :continue)>
     }
     token block:sym<olist> { <olist-item>+ }
     proto token header-underline {*}
@@ -129,5 +143,5 @@ grammar Markdown::To::PDF::Grammar {
     }
 
     # fallback, when all else fails
-    token scan {.}
+    token scan {<indent> | <!after ^^\h*>.}
 }

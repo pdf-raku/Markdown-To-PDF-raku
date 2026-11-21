@@ -228,9 +228,7 @@ method block:sym<header>($/) {
 }
 
 method list-item($/) {
-    my @P = $<words>.made;
-    my @LI = :@P;
-    @LI.append: $<md>.made;
+    my @LI = $<md>.made;
     make (:@LI);
 }
 
@@ -241,8 +239,7 @@ method block:sym<list>($/) {
 
 method olist-item($/) {
     my @Lbl = $<num>.Str;
-    my @P   = $<words>.made;
-    my @LI = :@Lbl, :@P;
+    my @LI = :@Lbl;
     @LI.append: $<md>.made;
 
     make (:@LI);
