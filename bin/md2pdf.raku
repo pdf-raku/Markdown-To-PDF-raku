@@ -12,7 +12,7 @@ sub MAIN(
     Bool :$,
     Bool :$quiet,
 ) {
-    my %o = (:$width, :$height, :$margin).grep: *.value;
+    my %o = (:$width, :$height, :$margin).grep: *.value.defined;
     $save-as //= @files.pop
         if @files.tail ~~ m:i/'.pdf'$/;
     my PDF::Render::Simple $renderer .= new: :!finish;

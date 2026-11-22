@@ -95,6 +95,11 @@ method inline:sym<code>($/) {
     make (:@Code);
 }
 
+method inline:sym<html>($/) {
+    warn "ignoring: " ~ $/.Str;
+    make Empty;
+}
+
 method text($/) { make $/.Str }
 
 method table-cell-text($/) {
@@ -227,13 +232,13 @@ method block:sym<header>($/) {
     make 'H' ~ $level => $<word>>>.made.&trim.&coalesce;
 }
 
-method list-item($/) {
+method ulist-item($/) {
     my @LI = $<md>.made;
     make (:@LI);
 }
 
-method block:sym<list>($/) {
-    my @L = $<list-item>>>.made;
+method block:sym<ulist>($/) {
+    my @L = $<ulist-item>>>.made;
     make (:@L);
 }
 
@@ -251,8 +256,7 @@ method block:sym<olist>($/) {
 }
 
 method para-line($/) {
-    my @words = $<word>.made;
-    @words.append: .made with $<words>;
+    my @words = $<words>.made;
     make @words.&trim;
 }
 

@@ -1,10 +1,10 @@
 grammar Markdown::To::PDF::Grammar {
 
-    token TOP {<md(0)>}
-    token md($*INDENT = 0, :continue($*CONTINUE-INDENT) is copy = False) {
-        [<block=.link-def> || <block=.sep-line> || <block> || <scan> ]*
+    token TOP {<md(0)> [[$<left-over>=.**1..50].* { die "parse failed at: " ~ $<left-over>.Str}]? }
+    token md($*INDENT is copy = 0, :cuddle($*CUDDLE) is copy = False) {
+        [<block=.link-def> || <block=.sep-line> || <block> ]*
     }
-    token eol {[\n|$] { $*CONTINUE-INDENT = False } }
+    token eol {[\n|$] { $*CUDDLE = False } }
     token ws { <!ww>\h* }
 
     proto token sep-line {*}
@@ -38,6 +38,7 @@ grammar Markdown::To::PDF::Grammar {
     token inline:sym<em1> {('*'**1..3) ~ '*'+ <words> }
     token inline:sym<em2> {('_'**1..3) ~ '_'+ <words> }
     token inline:sym<code> {(\`+) ~ $0 $<code>=.*? }
+    token inline:sym<html> { ['<' .*? '>']+ }
     token text {[<![*_<|]>\S]+}
     token words {<word>*}
     token word {[<inline>||<inline=.text>]<ws>?}
@@ -46,13 +47,13 @@ grammar Markdown::To::PDF::Grammar {
     token fence { <.indent><[`~]> ** 3..* }
     rule name { <alpha>+}
     token block:sym<fenced-code> {
-        ^^ [<fence><name>?\n] ~ [$<fence><.eol>] $<code>=.*?
+        ^^ [<fence><name>?<.eol>] ~ [<.eol>$<fence><.eol>] $<code>=.*?
     }
     token quote-line { <.indent> [$<q>='>' \h*]+ <words> <.eol> }
     token block:sym<quoted> { <quote-line>+ }
     token indented-code { <.code-indent> $<line>=\N* <.eol>}
     token block:sym<indented-code> {
-        <line=.indented-code> [<line=.indented-code> | <line=.blank-line>]*
+        <line=.indented-code><!after <list-starter>> [<line=.indented-code> | <line=.blank-line>]*
     }
     rule header-end {[ '#' ]* <.eol>}
     sub visual-indent(Str() $leading, Int :$tab-width = 8 --> Int) {
@@ -70,39 +71,53 @@ grammar Markdown::To::PDF::Grammar {
     }
 
     token indent {
-         :my $cont = $*CONTINUE-INDENT;
+         :my $cont = $*CUDDLE;
          :my $indent = $cont ?? 0 !! $*INDENT;
-         [ <?{$cont}> | ^^ ]
+         [ <?{$cont}>: | ^^ ]
          $<leading>=\h* <?{ $indent <= visual-indent($<leading>) < $indent + 4}>
     }
 
     token code-indent {
-         :my $cont = $*CONTINUE-INDENT;
+         :my $cont = $*CUDDLE;
          :my $indent = $cont ?? 0 !! $*INDENT;
          [ <?{$cont}> | ^^ ]
          $<leading>=\h+
          <?{ visual-indent($<leading>) >= $indent + 4}>
     }
-
-    token li-indent {^^ $<leading>=\h* <?{ $*INDENT <= visual-indent($<leading>) <= $*INDENT + 1}> }
+    token list-item {^^<.li-indent> [<.bp>|<.num>] \h}
+    token ulist-starter($p is rw)  {
+        ^^ $<leading>=\h* <.bp> \h
+        :my $indent;
+        <?{ $indent = visual-indent($<leading>); $indent >= $*INDENT}>
+        { $p = $indent }
+    }
+    token olist-starter($p is rw)  {
+        ^^ $<leading>=\h* <.num> \h
+        :my $indent;
+        <?{ $indent = visual-indent($<leading>); $indent >= $*INDENT}>
+        { $p = $indent }
+    }
+    token list-starter {:my $p; <ulist-starter($p)> | <olist-starter($p)> }
+    token li-indent {^^ $<leading>=\h* <?{ $*INDENT -1 <= visual-indent($<leading>) <= $*INDENT + 1}> }
     token block:sym<header> {<.indent> $<level>='#'**1..6 \h+ [<!header-end><word>]+ <header-end> }
     token bp {<[-+*]>}
-    token list-item {:my $indent;
+    token ulist-item {:my $indent;
          $<leading>=[<.li-indent> <.bp> \h] { $indent = visual-indent($<leading>.Str) }
-         <md($indent, :continue)>
+         <md($indent, :cuddle)>
     }
-    token block:sym<list> { <list-item>+ }
+    token block:sym<ulist> { :temp $*INDENT; <before <ulist-starter($*INDENT)>> <ulist-item>+ }
     token digits {<digit>+ }
     token num { <digits> +%% \. }
     token olist-item {:my $indent;
         $<leading>=[<.li-indent> <num> \h] { $indent = visual-indent($<leading>.Str) }
-        <md($indent, :continue)>
+        <md($indent, :cuddle)>
     }
-    token block:sym<olist> { <olist-item>+ }
+    token block:sym<olist> { :temp $*INDENT; <before <olist-starter($*INDENT)>> <olist-item>+ }
     proto token header-underline {*}
     token header-underline:sym<h1> {^^ '='+ <.eol> }
     token header-underline:sym<h2> {^^ '-'+ <.eol> }
-    token para-line {<.indent> <word><words> <.eol>}
+    token para-stopper {<list-starter>|<fence>|<link-def>|<blank-line>}
+    token para-line {<!para-stopper><.indent> <words> <.eol>}
     token block:sym<para-or-header> { <para-line> [<!header-underline><para-line>]* <header-underline>? }
     token table-align {
         \h* $<left>=':'? '-' ** 3..* $<right>=':'? \h*
@@ -125,6 +140,7 @@ grammar Markdown::To::PDF::Grammar {
     }
 
     token table-row {
+        <!before \h*'|'> # need this for some reason
         <.indent>
         [
             '|' [ <table-cell> +% '|' ] '|'?   # Leading pipe (trailing optional)
@@ -138,10 +154,10 @@ grammar Markdown::To::PDF::Grammar {
         $<header>=<table-row>
         <table-delim>
         # Enforce GFM rule: header and delimiter column counts must match
-        <?{ $<header><table-cell>.elems == $<table-delim><table-align>.elems }>
+        #<?{ $<header><table-cell>.elems == $<table-delim><table-align>.elems }>
         [ <!blank-line> <!sep-line> $<body-row>=<table-row> ]*
     }
 
     # fallback, when all else fails
-    token scan {<indent> | <!after ^^\h*>.}
+    token scan {.}
 }
