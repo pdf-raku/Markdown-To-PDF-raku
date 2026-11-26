@@ -95,8 +95,9 @@ method inline:sym<code>($/) {
     make (:@Code);
 }
 
-method inline:sym<html>($/) {
-    warn "ignoring: " ~ $/.Str;
+method html-chunk($/) {
+    # todo: HTML::To::Xxxx
+    warn "todo HTML: " ~ $/.Str;
     make Empty;
 }
 

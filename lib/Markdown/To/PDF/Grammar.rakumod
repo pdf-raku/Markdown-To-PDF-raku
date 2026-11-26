@@ -38,10 +38,10 @@ grammar Markdown::To::PDF::Grammar {
     token inline:sym<em1> {('*'**1..3) ~ '*'+ <words> }
     token inline:sym<em2> {('_'**1..3) ~ '_'+ <words> }
     token inline:sym<code> {(\`+) ~ $0 $<code>=.*? }
-    token inline:sym<html> { ['<' .*? '>']+ }
+    token html-chunk { '<' ~ '>' .*?  }
     token text {[<![*_<|]>\S]+}
     token words {<word>*}
-    token word {[<inline>||<inline=.text>]<ws>?}
+    token word {[<inline>||<inline=.text>||<inline=.html-chunk>]<ws>?}
 
     proto token block {*}
     token fence { <.indent><[`~]> ** 3..* }
@@ -154,7 +154,7 @@ grammar Markdown::To::PDF::Grammar {
         $<header>=<table-row>
         <table-delim>
         # Enforce GFM rule: header and delimiter column counts must match
-        #<?{ $<header><table-cell>.elems == $<table-delim><table-align>.elems }>
+        <?{ $<header><table-cell>.elems == $<table-delim><table-align>.elems }>
         [ <!blank-line> <!sep-line> $<body-row>=<table-row> ]*
     }
 
